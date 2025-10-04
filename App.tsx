@@ -1,20 +1,51 @@
+import React from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { PoultryProvider } from './src/contexts/PoultryContext';
+import DashboardScreen from './src/screens/DashboardScreen';
+import BatchesScreen from './src/screens/BatchesScreen';
+import CabinsScreen from './src/screens/CabinsScreen';
+
+const Stack = createNativeStackNavigator();
 
 export default function App() {
   return (
-    <View style={styles.container}>
-      <Text>Open up App.tsx to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <SafeAreaProvider>
+      <PoultryProvider>
+        <NavigationContainer>
+          <Stack.Navigator
+            initialRouteName="Dashboard"
+            screenOptions={{
+              headerStyle: {
+                backgroundColor: '#4CAF50',
+              },
+              headerTintColor: '#fff',
+              headerTitleStyle: {
+                fontWeight: 'bold',
+              },
+            }}
+          >
+            <Stack.Screen 
+              name="Dashboard" 
+              component={DashboardScreen}
+              options={{ title: 'Varahi Farms' }}
+            />
+            <Stack.Screen 
+              name="Batches" 
+              component={BatchesScreen}
+              options={{ title: 'Chick Batches' }}
+            />
+            <Stack.Screen 
+              name="Cabins" 
+              component={CabinsScreen}
+              options={{ title: 'Cabins' }}
+            />
+          </Stack.Navigator>
+        </NavigationContainer>
+        <StatusBar style="light" />
+      </PoultryProvider>
+    </SafeAreaProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
