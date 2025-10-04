@@ -1,11 +1,11 @@
 import axios from 'axios';
 
-// Configuration - You'll need to update these values
+// Configuration - Connected to your Google Sheet
 const GOOGLE_SHEETS_CONFIG = {
-  // Replace with your Google Sheets URL after sharing with edit access
-  spreadsheetUrl: 'YOUR_GOOGLE_SHEETS_URL_HERE',
-  // We'll use Google Apps Script as a bridge to write data
-  scriptUrl: 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE'
+  // Your Google Sheets URL
+  spreadsheetUrl: 'https://docs.google.com/spreadsheets/d/1vVTHCKVaq86cBRGJRNPGObv_zybFEEK7gRH7XPb1vkE/edit',
+  // Google Apps Script Web App URL
+  scriptUrl: 'https://script.google.com/macros/s/AKfycbxk_dXr0RdqBa5T67VS8T2mB53jV6otN5KJzsZywh_qjfNxHeIdf0YNwGhGq27Eqj0oQA/exec'
 };
 
 export interface BatchData {
