@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { saveBatchToSheets, saveCabinToSheets, deleteBatchFromSheets, deleteCabinFromSheets } from '../services/googleSheets';
 
 export interface Batch {
   id: string;
@@ -22,12 +23,12 @@ export interface Cabin {
 interface PoultryContextType {
   batches: Batch[];
   cabins: Cabin[];
-  addBatch: (batch: Omit<Batch, 'id' | 'createdAt'>, customId?: string) => void;
+  addBatch: (batch: Omit<Batch, 'id' | 'createdAt'>, customId?: string) => Promise<void>;
   updateBatch: (id: string, batch: Partial<Batch>) => void;
-  deleteBatch: (id: string) => void;
-  addCabin: (cabin: Omit<Cabin, 'id' | 'assignedBatches'>) => void;
+  deleteBatch: (id: string) => Promise<void>;
+  addCabin: (cabin: Omit<Cabin, 'id' | 'assignedBatches'>) => Promise<void>;
   updateCabin: (id: string, cabin: Partial<Cabin>) => void;
-  deleteCabin: (id: string) => void;
+  deleteCabin: (id: string) => Promise<void>;
   assignBatchToCabin: (batchId: string, cabinId: string | null) => void;
 }
 
@@ -85,20 +86,37 @@ export const PoultryProvider: React.FC<{ children: React.ReactNode }> = ({ child
     saveData();
   }, [cabins]);
 
-  const addBatch = (batch: Omit<Batch, 'id' | 'createdAt'>, customId?: string) => {
+  const addBatch = async (batch: Omit<Batch, 'id' | 'createdAt'>, customId?: string) => {
     const newBatch: Batch = {
       ...batch,
       id: customId || `BATCH-${Date.now()}`,
       createdAt: new Date().toISOString(),
     };
     setBatches(prev => [...prev, newBatch]);
+    
+    // Save to Google Sheets
+    try {
+      await saveBatchToSheets({
+        sessionId: customId || newBatch.id,
+        batchId: newBatch.id,
+        source: newBatch.source,
+        numberOfChicks: newBatch.numberOfChicks,
+        age: newBatch.lifeSpan,
+        hatchedDate: newBatch.dateOfBirth,
+        cabinId: newBatch.cabinId || '',
+        notes: newBatch.notes,
+        createdAt: newBatch.createdAt,
+      });
+    } catch (error) {
+      console.log('Could not sync to Google Sheets (offline mode):', error);
+    }
   };
 
   const updateBatch = (id: string, updates: Partial<Batch>) => {
     setBatches(prev => prev.map(b => b.id === id ? { ...b, ...updates } : b));
   };
 
-  const deleteBatch = (id: string) => {
+  const deleteBatch = async (id: string) => {
     const batch = batches.find(b => b.id === id);
     if (batch?.cabinId) {
       setCabins(prev => prev.map(c => 
@@ -108,26 +126,52 @@ export const PoultryProvider: React.FC<{ children: React.ReactNode }> = ({ child
       ));
     }
     setBatches(prev => prev.filter(b => b.id !== id));
+    
+    // Delete from Google Sheets
+    try {
+      await deleteBatchFromSheets(id);
+    } catch (error) {
+      console.log('Could not sync deletion to Google Sheets (offline mode):', error);
+    }
   };
 
-  const addCabin = (cabin: Omit<Cabin, 'id' | 'assignedBatches'>) => {
+  const addCabin = async (cabin: Omit<Cabin, 'id' | 'assignedBatches'>) => {
     const newCabin: Cabin = {
       ...cabin,
       id: `cabin-${Date.now()}`,
       assignedBatches: [],
     };
     setCabins(prev => [...prev, newCabin]);
+    
+    // Save to Google Sheets
+    try {
+      await saveCabinToSheets({
+        id: newCabin.id,
+        name: newCabin.name,
+        capacity: newCabin.totalCapacity,
+        createdAt: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.log('Could not sync to Google Sheets (offline mode):', error);
+    }
   };
 
   const updateCabin = (id: string, updates: Partial<Cabin>) => {
     setCabins(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
   };
 
-  const deleteCabin = (id: string) => {
+  const deleteCabin = async (id: string) => {
     setBatches(prev => prev.map(b => 
       b.cabinId === id ? { ...b, cabinId: null } : b
     ));
     setCabins(prev => prev.filter(c => c.id !== id));
+    
+    // Delete from Google Sheets
+    try {
+      await deleteCabinFromSheets(id);
+    } catch (error) {
+      console.log('Could not sync deletion to Google Sheets (offline mode):', error);
+    }
   };
 
   const assignBatchToCabin = (batchId: string, cabinId: string | null) => {
