@@ -96,7 +96,12 @@ export const PoultryProvider: React.FC<{ children: React.ReactNode }> = ({ child
     
     // Save to Google Sheets
     try {
-      await saveBatchToSheets({
+      console.log('📤 Syncing batch to Google Sheets...', {
+        sessionId: customId || newBatch.id,
+        batchId: newBatch.id,
+      });
+      
+      const success = await saveBatchToSheets({
         sessionId: customId || newBatch.id,
         batchId: newBatch.id,
         source: newBatch.source,
@@ -107,8 +112,15 @@ export const PoultryProvider: React.FC<{ children: React.ReactNode }> = ({ child
         notes: newBatch.notes,
         createdAt: newBatch.createdAt,
       });
+      
+      if (success) {
+        console.log('✅ Successfully synced to Google Sheets!');
+      } else {
+        console.warn('⚠️ Google Sheets sync returned false');
+      }
     } catch (error) {
-      console.log('Could not sync to Google Sheets (offline mode):', error);
+      console.error('❌ Could not sync to Google Sheets:', error);
+      console.error('Error details:', JSON.stringify(error, null, 2));
     }
   };
 

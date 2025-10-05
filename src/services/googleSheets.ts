@@ -32,6 +32,10 @@ export interface CabinData {
  */
 export const saveBatchToSheets = async (batch: BatchData): Promise<boolean> => {
   try {
+    console.log('🔄 Sending request to Google Sheets API...');
+    console.log('📍 URL:', GOOGLE_SHEETS_CONFIG.scriptUrl);
+    console.log('📦 Data:', JSON.stringify({ type: 'batch', data: batch }, null, 2));
+    
     const response = await axios.post(GOOGLE_SHEETS_CONFIG.scriptUrl, {
       type: 'batch',
       data: {
@@ -49,11 +53,24 @@ export const saveBatchToSheets = async (batch: BatchData): Promise<boolean> => {
       headers: {
         'Content-Type': 'application/json',
       },
+      timeout: 30000, // 30 second timeout
     });
     
+    console.log('📥 Response received:', JSON.stringify(response.data, null, 2));
+    console.log('📥 Response status:', response.status);
+    
     return response.data.success === true;
-  } catch (error) {
-    console.error('Error saving batch to Google Sheets:', error);
+  } catch (error: any) {
+    console.error('❌ Error saving batch to Google Sheets:');
+    console.error('Error message:', error.message);
+    if (error.response) {
+      console.error('Response status:', error.response.status);
+      console.error('Response data:', JSON.stringify(error.response.data, null, 2));
+    } else if (error.request) {
+      console.error('No response received:', error.request);
+    } else {
+      console.error('Error details:', error);
+    }
     return false;
   }
 };
